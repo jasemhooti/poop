@@ -1,1 +1,15 @@
- 
+ [Unit]
+Description=Betting Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/betting_bot
+Environment=PYTHONPATH=/root/betting_bot
+ExecStart=/root/betting_bot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
