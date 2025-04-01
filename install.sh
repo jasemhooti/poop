@@ -17,6 +17,18 @@ case $choice in
     1)
         echo -e "${GREEN}شروع فرآیند نصب...${NC}"
         
+        # ایجاد دایرکتوری پروژه
+        mkdir -p betting_bot
+        cd betting_bot
+        
+        # دانلود فایل‌های مورد نیاز
+        echo "دانلود فایل‌های مورد نیاز..."
+        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/requirements.txt
+        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/bot.py
+        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/game.py
+        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/user_management.py
+        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/admin_panel.py
+        
         # بررسی و نصب پکیج‌های مورد نیاز سیستم
         echo "نصب پکیج‌های مورد نیاز سیستم..."
         sudo apt-get update
@@ -68,6 +80,7 @@ EOL
         
     2)
         echo -e "${YELLOW}شروع فرآیند بروزرسانی...${NC}"
+        cd betting_bot
         source venv/bin/activate
         pip install -r requirements.txt --upgrade
         echo -e "${GREEN}بروزرسانی با موفقیت به پایان رسید!${NC}"
@@ -79,8 +92,7 @@ EOL
         sudo apt-get remove -y phpmyadmin
         sudo mysql -e "DROP DATABASE IF EXISTS betting_bot;"
         sudo mysql -e "DROP USER IF EXISTS 'admin'@'localhost';"
-        rm -rf venv
-        rm -f .env
+        rm -rf betting_bot
         echo -e "${GREEN}حذف با موفقیت به پایان رسید!${NC}"
         ;;
         
@@ -88,4 +100,4 @@ EOL
         echo -e "${RED}گزینه نامعتبر!${NC}"
         exit 1
         ;;
-esac 
+esac
