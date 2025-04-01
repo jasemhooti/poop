@@ -21,18 +21,53 @@ case $choice in
         mkdir -p betting_bot
         cd betting_bot
         
-        # دانلود فایل‌های مورد نیاز
-        echo "دانلود فایل‌های مورد نیاز..."
-        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/requirements.txt
-        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/bot.py
-        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/game.py
-        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/user_management.py
-        curl -O https://raw.githubusercontent.com/USERNAME/REPO/main/admin_panel.py
+        # ایجاد فایل requirements.txt
+        echo "ایجاد فایل requirements.txt..."
+        cat > requirements.txt << EOL
+aiogram==3.3.0
+python-dotenv==1.0.0
+mysql-connector-python==8.2.0
+cryptography==41.0.7
+aiohttp==3.9.1
+python-telegram-bot==20.7
+EOL
+        
+        # ایجاد فایل‌های اصلی
+        echo "ایجاد فایل‌های اصلی..."
+        touch bot.py game.py user_management.py admin_panel.py
         
         # بررسی و نصب پکیج‌های مورد نیاز سیستم
         echo "نصب پکیج‌های مورد نیاز سیستم..."
         sudo apt-get update
         sudo apt-get install -y python3 python3-pip python3-venv mysql-server phpmyadmin nginx certbot python3-certbot-nginx
+        
+        # تنظیمات Nginx
+        echo "تنظیمات Nginx..."
+        sudo tee /etc/nginx/sites-available/betting_bot << EOL
+server {
+    listen 80;
+    server_name \$DOMAIN;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /phpmyadmin {
+        include /etc/nginx/snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+EOL
+        
+        # فعال‌سازی سایت
+        sudo ln -sf /etc/nginx/sites-available/betting_bot /etc/nginx/sites-enabled/
+        sudo rm -f /etc/nginx/sites-enabled/default
         
         # ایجاد محیط مجازی
         echo "ایجاد محیط مجازی Python..."
@@ -73,6 +108,7 @@ EOL
         # راه‌اندازی سرویس
         echo "راه‌اندازی سرویس..."
         sudo systemctl enable nginx
+        sudo nginx -t
         sudo systemctl restart nginx
         
         echo -e "${GREEN}نصب با موفقیت به پایان رسید!${NC}"
@@ -92,6 +128,8 @@ EOL
         sudo apt-get remove -y phpmyadmin
         sudo mysql -e "DROP DATABASE IF EXISTS betting_bot;"
         sudo mysql -e "DROP USER IF EXISTS 'admin'@'localhost';"
+        sudo rm -f /etc/nginx/sites-enabled/betting_bot
+        sudo rm -f /etc/nginx/sites-available/betting_bot
         rm -rf betting_bot
         echo -e "${GREEN}حذف با موفقیت به پایان رسید!${NC}"
         ;;
@@ -100,4 +138,4 @@ EOL
         echo -e "${RED}گزینه نامعتبر!${NC}"
         exit 1
         ;;
-esac
+esac 
