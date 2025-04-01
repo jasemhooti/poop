@@ -41,12 +41,17 @@ EOL
         sudo apt-get update
         sudo apt-get install -y python3 python3-pip python3-venv mysql-server phpmyadmin nginx certbot python3-certbot-nginx
         
+        # درخواست اطلاعات مورد نیاز
+        read -p "لطفاً توکن ربات تلگرام را وارد کنید: " BOT_TOKEN
+        read -p "لطفاً شناسه تلگرام ادمین را وارد کنید: " ADMIN_ID
+        read -p "لطفاً دامنه را وارد کنید: " DOMAIN
+        
         # تنظیمات Nginx
         echo "تنظیمات Nginx..."
         sudo tee /etc/nginx/sites-available/betting_bot << EOL
 server {
     listen 80;
-    server_name \$DOMAIN;
+    server_name ${DOMAIN};
     
     location / {
         proxy_pass http://127.0.0.1:8000;
@@ -69,6 +74,18 @@ EOL
         sudo ln -sf /etc/nginx/sites-available/betting_bot /etc/nginx/sites-enabled/
         sudo rm -f /etc/nginx/sites-enabled/default
         
+        # بررسی تنظیمات Nginx
+        echo "بررسی تنظیمات Nginx..."
+        sudo nginx -t
+        
+        # راه‌اندازی مجدد Nginx
+        echo "راه‌اندازی مجدد Nginx..."
+        sudo systemctl restart nginx
+        
+        # تنظیمات SSL
+        echo "درخواست گواهینامه SSL..."
+        sudo certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos --email admin@${DOMAIN}
+        
         # ایجاد محیط مجازی
         echo "ایجاد محیط مجازی Python..."
         python3 -m venv venv
@@ -85,11 +102,6 @@ EOL
         sudo mysql -e "GRANT ALL PRIVILEGES ON betting_bot.* TO 'admin'@'localhost';"
         sudo mysql -e "FLUSH PRIVILEGES;"
         
-        # درخواست اطلاعات مورد نیاز
-        read -p "لطفاً توکن ربات تلگرام را وارد کنید: " BOT_TOKEN
-        read -p "لطفاً شناسه تلگرام ادمین را وارد کنید: " ADMIN_ID
-        read -p "لطفاً دامنه را وارد کنید: " DOMAIN
-        
         # ایجاد فایل تنظیمات
         cat > .env << EOL
 BOT_TOKEN=$BOT_TOKEN
@@ -100,16 +112,6 @@ DB_USER=admin
 DB_PASS=admin
 DB_NAME=betting_bot
 EOL
-        
-        # تنظیمات SSL
-        echo "درخواست گواهینامه SSL..."
-        sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN
-        
-        # راه‌اندازی سرویس
-        echo "راه‌اندازی سرویس..."
-        sudo systemctl enable nginx
-        sudo nginx -t
-        sudo systemctl restart nginx
         
         echo -e "${GREEN}نصب با موفقیت به پایان رسید!${NC}"
         ;;
