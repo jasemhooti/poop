@@ -17,31 +17,6 @@ case $choice in
     1)
         echo -e "${GREEN}شروع فرآیند نصب...${NC}"
         
-        # آزادسازی پورت‌ها
-        echo "آزادسازی پورت‌های 80 و 443..."
-        sudo fuser -k 80/tcp
-        sudo fuser -k 443/tcp
-        sudo kill -9 $(sudo lsof -t -i:80)
-        sudo kill -9 $(sudo lsof -t -i:443)
-        
-        # توقف سرویس‌های در حال اجرا
-        echo "توقف سرویس‌های در حال اجرا..."
-        sudo systemctl stop nginx
-        sudo systemctl stop apache2
-        sudo killall nginx
-        sudo killall apache2
-        
-        # اطمینان از آزاد بودن پورت‌ها
-        echo "بررسی آزاد بودن پورت‌ها..."
-        if sudo lsof -i :80 > /dev/null; then
-            echo -e "${RED}پورت 80 همچنان در حال استفاده است. لطفاً برنامه‌های در حال استفاده از این پورت را ببندید.${NC}"
-            exit 1
-        fi
-        if sudo lsof -i :443 > /dev/null; then
-            echo -e "${RED}پورت 443 همچنان در حال استفاده است. لطفاً برنامه‌های در حال استفاده از این پورت را ببندید.${NC}"
-            exit 1
-        fi
-        
         # ایجاد دایرکتوری پروژه
         mkdir -p betting_bot
         cd betting_bot
@@ -61,6 +36,26 @@ EOL
         echo "ایجاد فایل‌های اصلی..."
         touch bot.py game.py user_management.py admin_panel.py
         
+        # ایجاد فایل سرویس
+        echo "ایجاد فایل سرویس..."
+        cat > betting_bot.service << EOL
+[Unit]
+Description=Betting Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/betting_bot
+Environment=PYTHONPATH=/root/betting_bot
+ExecStart=/root/betting_bot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOL
+        
         # بررسی و نصب پکیج‌های مورد نیاز سیستم
         echo "نصب پکیج‌های مورد نیاز سیستم..."
         sudo apt-get update
@@ -77,7 +72,7 @@ EOL
 server {
     listen 80;
     server_name ${DOMAIN};
-    
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host \$host;
@@ -85,7 +80,7 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
-    
+
     location /phpmyadmin {
         include /etc/nginx/snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
