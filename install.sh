@@ -17,12 +17,30 @@ case $choice in
     1)
         echo -e "${GREEN}شروع فرآیند نصب...${NC}"
         
+        # آزادسازی پورت‌ها
+        echo "آزادسازی پورت‌های 80 و 443..."
+        sudo fuser -k 80/tcp
+        sudo fuser -k 443/tcp
+        sudo kill -9 $(sudo lsof -t -i:80)
+        sudo kill -9 $(sudo lsof -t -i:443)
+        
         # توقف سرویس‌های در حال اجرا
         echo "توقف سرویس‌های در حال اجرا..."
         sudo systemctl stop nginx
         sudo systemctl stop apache2
         sudo killall nginx
         sudo killall apache2
+        
+        # اطمینان از آزاد بودن پورت‌ها
+        echo "بررسی آزاد بودن پورت‌ها..."
+        if sudo lsof -i :80 > /dev/null; then
+            echo -e "${RED}پورت 80 همچنان در حال استفاده است. لطفاً برنامه‌های در حال استفاده از این پورت را ببندید.${NC}"
+            exit 1
+        fi
+        if sudo lsof -i :443 > /dev/null; then
+            echo -e "${RED}پورت 443 همچنان در حال استفاده است. لطفاً برنامه‌های در حال استفاده از این پورت را ببندید.${NC}"
+            exit 1
+        fi
         
         # ایجاد دایرکتوری پروژه
         mkdir -p betting_bot
