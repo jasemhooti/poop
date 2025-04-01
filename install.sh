@@ -138,6 +138,13 @@ DB_PASS=admin
 DB_NAME=betting_bot
 EOL
         
+        # نصب سرویس سیستم
+        echo "نصب سرویس سیستم..."
+        sudo cp betting_bot.service /etc/systemd/system/
+        sudo systemctl daemon-reload
+        sudo systemctl enable betting_bot
+        sudo systemctl start betting_bot
+        
         echo -e "${GREEN}نصب با موفقیت به پایان رسید!${NC}"
         ;;
         
@@ -146,11 +153,16 @@ EOL
         cd betting_bot
         source venv/bin/activate
         pip install -r requirements.txt --upgrade
+        sudo systemctl restart betting_bot
         echo -e "${GREEN}بروزرسانی با موفقیت به پایان رسید!${NC}"
         ;;
         
     3)
         echo -e "${RED}شروع فرآیند حذف...${NC}"
+        sudo systemctl stop betting_bot
+        sudo systemctl disable betting_bot
+        sudo rm -f /etc/systemd/system/betting_bot.service
+        sudo systemctl daemon-reload
         sudo systemctl stop nginx
         sudo systemctl stop apache2
         sudo killall nginx
@@ -168,4 +180,4 @@ EOL
         echo -e "${RED}گزینه نامعتبر!${NC}"
         exit 1
         ;;
-esac 
+esac
