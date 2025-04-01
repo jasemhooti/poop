@@ -17,6 +17,13 @@ case $choice in
     1)
         echo -e "${GREEN}شروع فرآیند نصب...${NC}"
         
+        # توقف سرویس‌های در حال اجرا
+        echo "توقف سرویس‌های در حال اجرا..."
+        sudo systemctl stop nginx
+        sudo systemctl stop apache2
+        sudo killall nginx
+        sudo killall apache2
+        
         # ایجاد دایرکتوری پروژه
         mkdir -p betting_bot
         cd betting_bot
@@ -127,6 +134,9 @@ EOL
     3)
         echo -e "${RED}شروع فرآیند حذف...${NC}"
         sudo systemctl stop nginx
+        sudo systemctl stop apache2
+        sudo killall nginx
+        sudo killall apache2
         sudo apt-get remove -y phpmyadmin
         sudo mysql -e "DROP DATABASE IF EXISTS betting_bot;"
         sudo mysql -e "DROP USER IF EXISTS 'admin'@'localhost';"
